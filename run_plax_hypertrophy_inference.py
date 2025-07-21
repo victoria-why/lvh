@@ -15,7 +15,11 @@ from tqdm import tqdm
 from scipy.signal import find_peaks
 import shutil
 import sys
+<<<<<<< HEAD
 # from threading import Thread, Lock
+=======
+from threading import Thread, Lock
+>>>>>>> 5044dc3 (added changes to fix inference loop)
 
 from utils import BoolAction, get_clip_dims, read_clip, get_systole_diastole, get_lens_np, get_points_np
 from utils import get_angles_np, get_pred_measurements, overlay_preds, model_paths
@@ -27,7 +31,11 @@ from pathlib import Path
 import torchvision
 import os
 
+<<<<<<< HEAD
 # plt_thread_lock = Lock()
+=======
+plt_thread_lock = Lock()
+>>>>>>> 5044dc3 (added changes to fix inference loop)
 
 def dicom_to_avi(dcm_path,in_dir,suffix='avi',fps=30):
     ### Color convert
@@ -286,12 +294,16 @@ class PlaxHypertrophyInferenceEngine:
             save_npy (bool, optional): Save raw predictions in numpy form. Defaults to False.
         """
 
+<<<<<<< HEAD
         # Prepare
+=======
+>>>>>>> 5044dc3 (added changes to fix inference loop)
         in_dir = Path(in_dir) if isinstance(in_dir, str) else in_dir
         out_dir = Path(out_dir) if isinstance(out_dir, str) else out_dir
         p = lambda s: print(s) if verbose else None
         if not out_dir.exists():
             out_dir.mkdir()
+<<<<<<< HEAD
 
         # Start inference threads. Run inference, save results to out_dir
         p('Running inference')
@@ -299,16 +311,31 @@ class PlaxHypertrophyInferenceEngine:
         avis = [l for l in list(in_dir.iterdir()) if l.suffix=='.avi']
         print('Inferencing on avis:\n',len(avis),'\n')
         ### path, frame, predictions
+=======
+        p('Running inference')
+        threads = []
+        avis = [l for l in list(in_dir.iterdir()) if l.suffix=='.avi']
+        print('Inferencing on avis:\n',len(avis),'\n')
+>>>>>>> 5044dc3 (added changes to fix inference loop)
         for fn, clip, preds in engine._run_on_clips(avis, #list(in_dir.iterdir()), 
                                 verbose=verbose, channels_in=channels_in, channels_out=channels_out,
                                 batch_size=batch_size):
             save_preds(out_dir,fn.name,clip,preds,save_csv,save_avi,save_plot,save_npy)
+<<<<<<< HEAD
             # if len(threads) > n_threads:
             #     t = threads.pop(0)
             #     t.join()
             # t = Thread(target=save_preds, args=(out_dir, fn.name, clip, preds, save_csv, save_avi, save_plot, save_npy))
             # t.start()
             # threads.append(t)
+=======
+            if len(threads) > n_threads:
+                t = threads.pop(0)
+                t.join()
+            t = Thread(target=save_preds, args=(out_dir, fn.name, clip, preds, save_csv, save_avi, save_plot, save_npy))
+            t.start()
+            threads.append(t)
+>>>>>>> 5044dc3 (added changes to fix inference loop)
         
         # Wait for remaining threads to finish
         # p('Waiting for threads to finish')

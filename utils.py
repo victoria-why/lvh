@@ -232,16 +232,26 @@ def crop_and_scale(img: np.ndarray,res)->np.ndarray: #res=(640, 480)) -> np.ndar
     r_in = in_res[0] / in_res[1]
     r_out = res[0] / res[1]
 
+<<<<<<< HEAD
     # if r_in > r_out:
     #     padding = int(round((in_res[0] - r_out * in_res[1]) / 2))
     #     img = img[:, padding:-padding]
     # if r_in < r_out:
     #     padding = int(round((in_res[1] - in_res[0] / r_out) / 2))
     #     img = img[padding:-padding]
+=======
+    if r_in > r_out:
+        padding = int(round((in_res[0] - r_out * in_res[1]) / 2))
+        img = img[:, padding:-padding]
+    if r_in < r_out:
+        padding = int(round((in_res[1] - in_res[0] / r_out) / 2))
+        img = img[padding:-padding]
+>>>>>>> 5044dc3 (added changes to fix inference loop)
     
     img = cv2.resize(img, res)
 
     return img
+<<<<<<< HEAD
 
 '''
 DICOM PROCESSING + VIEW CLASSIFICATION 
@@ -537,3 +547,5 @@ def get_dicoms(parent,new_dir):
             for dcm in dicom_dir.iterdir():
                 dst_path = new_path/f'{id}_{dcm.name}'
                 shutil.copy(src=dcm,dst=dst_path)
+=======
+>>>>>>> 5044dc3 (added changes to fix inference loop)
