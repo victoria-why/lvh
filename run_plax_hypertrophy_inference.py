@@ -15,11 +15,7 @@ from tqdm import tqdm
 from scipy.signal import find_peaks
 import shutil
 import sys
-<<<<<<< HEAD
-# from threading import Thread, Lock
-=======
 from threading import Thread, Lock
->>>>>>> 5044dc3 (added changes to fix inference loop)
 
 from utils import BoolAction, get_clip_dims, read_clip, get_systole_diastole, get_lens_np, get_points_np
 from utils import get_angles_np, get_pred_measurements, overlay_preds, model_paths
@@ -31,30 +27,7 @@ from pathlib import Path
 import torchvision
 import os
 
-<<<<<<< HEAD
-# plt_thread_lock = Lock()
-=======
 plt_thread_lock = Lock()
->>>>>>> 5044dc3 (added changes to fix inference loop)
-
-def dicom_to_avi(dcm_path,in_dir,suffix='avi',fps=30):
-    ### Color convert
-    pixels = change_doppler_color(dcm_path) # F,H,W,C
-    h = pixels.shape[1]
-    w = pixels.shape[2]
-    h_input = h #480
-    w_input = w #640
-    pixels = torch.from_numpy(pixels)
-    if (h!=h_input) and (w!=w_input):
-        ### Resize to 480x640
-        pixels = torch.as_tensor(pixels).permute(0,3,1,2) # F,C,H,W
-        resizer = torchvision.transforms.Resize((h_input,w_input))
-        pixels = resizer(pixels)
-        pixels = pixels.permute(0,2,3,1) #F,H,W,C
-    ### Save avi to input directory
-    name = Path(dcm_path).stem
-    avi_path = f'{in_dir}/{name}.{suffix}'
-    torchvision.io.write_video(avi_path,pixels,round(fps),'libxvid')
 
 def save_preds(
             p: Union[str, Path], fn: str, clip: np.ndarray, preds: np.ndarray, 
@@ -116,8 +89,8 @@ def save_preds(
 
     # Save an animation of the predictions overlayed on the cropped video as .avi
     if avi:
-        # with plt_thread_lock:
-            # make_animation(inf_path / (folder_name + '.avi'), clip, preds, pred_pts, pred_lens, sys_i, dia_i)
+        with plt_thread_lock:
+            make_animation(inf_path / (folder_name + '.avi'), clip, preds, pred_pts, pred_lens, sys_i, dia_i)
         make_animation_cv2(inf_path / (folder_name + '.avi'), clip, preds, pred_pts)
     
     # Save a plot of measurements vs time for whole clip
@@ -294,53 +267,30 @@ class PlaxHypertrophyInferenceEngine:
             save_npy (bool, optional): Save raw predictions in numpy form. Defaults to False.
         """
 
-<<<<<<< HEAD
-        # Prepare
-=======
->>>>>>> 5044dc3 (added changes to fix inference loop)
         in_dir = Path(in_dir) if isinstance(in_dir, str) else in_dir
         out_dir = Path(out_dir) if isinstance(out_dir, str) else out_dir
         p = lambda s: print(s) if verbose else None
         if not out_dir.exists():
             out_dir.mkdir()
-<<<<<<< HEAD
-
-        # Start inference threads. Run inference, save results to out_dir
-        p('Running inference')
-        # threads = []
-        avis = [l for l in list(in_dir.iterdir()) if l.suffix=='.avi']
-        print('Inferencing on avis:\n',len(avis),'\n')
-        ### path, frame, predictions
-=======
         p('Running inference')
         threads = []
         avis = [l for l in list(in_dir.iterdir()) if l.suffix=='.avi']
         print('Inferencing on avis:\n',len(avis),'\n')
->>>>>>> 5044dc3 (added changes to fix inference loop)
-        for fn, clip, preds in engine._run_on_clips(avis, #list(in_dir.iterdir()), 
+        for fn, clip, preds in engine._run_on_clips(avis, 
                                 verbose=verbose, channels_in=channels_in, channels_out=channels_out,
                                 batch_size=batch_size):
             save_preds(out_dir,fn.name,clip,preds,save_csv,save_avi,save_plot,save_npy)
-<<<<<<< HEAD
-            # if len(threads) > n_threads:
-            #     t = threads.pop(0)
-            #     t.join()
-            # t = Thread(target=save_preds, args=(out_dir, fn.name, clip, preds, save_csv, save_avi, save_plot, save_npy))
-            # t.start()
-            # threads.append(t)
-=======
             if len(threads) > n_threads:
                 t = threads.pop(0)
                 t.join()
             t = Thread(target=save_preds, args=(out_dir, fn.name, clip, preds, save_csv, save_avi, save_plot, save_npy))
             t.start()
             threads.append(t)
->>>>>>> 5044dc3 (added changes to fix inference loop)
         
         # Wait for remaining threads to finish
-        # p('Waiting for threads to finish')
-        # for t in tqdm(threads) if verbose else threads:
-        #     t.join()
+        p('Waiting for threads to finish')
+        for t in tqdm(threads) if verbose else threads:
+            t.join()
         p('Finished')
 
     def _run_on_clips(
@@ -361,16 +311,12 @@ class PlaxHypertrophyInferenceEngine:
         })
         print('Num unique paths:\t',frame_map.path.nunique())
         # Run
-        clips = dict()  # clips currently being processed
+        clips = dict()  
         batch = np.zeros((batch_size,h,w,channels_in))
-        ### BUG: off-by-one batch
         for si in tqdm(range(0, len(frame_map), batch_size)) if verbose else range(0, len(frame_map), batch_size):
-            # Grab batches from frame map 
             batch_map = frame_map.iloc[si:min(si + batch_size, len(frame_map))]
             batch_paths = batch_map['path'].unique()
             l = list(clips.items())
-            # Check if inference has finished for all current clips
-            # and yield results for any finished.
             for k, v in l:
                 if k not in batch_paths:
                     ### Yield for saving
@@ -380,10 +326,7 @@ class PlaxHypertrophyInferenceEngine:
             # Generate batch
             for p in batch_paths:
                 if p not in clips:
-                    ### If path is not in keys of clips
-                    ### Read in frame from path and return as np.array
                     c = read_clip(p)
-                    ### Update dict clips with key:value :: path:: (all frames, zeores of frames)
                     clips[p] = (c, np.zeros((len(c),h,w, channels_out), dtype=float))
                 batch[:len(batch_map)][batch_map['path'] == p] = clips[p][0][batch_map[batch_map['path'] == p]['frame']]
             ### Run inference 
@@ -419,7 +362,6 @@ if __name__ == '__main__':
     
     # CLI Interface for running inference on a directory
     # and saving predictions to an output directory.
-    factor = 0.75
     args = {
         'device': ('cuda:0', 'Device to run inference on. Ex: "cuda:0" or "cpu"'),
         'verbose': (True, 'Print progress and statistics while running. y/n'),
@@ -433,39 +375,7 @@ if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('in_dir', type=str, help='Directory containing .avi\' to run inference on.')
     parser.add_argument('out_dir', type=str, help='Direcotry to output predictions to.')
-    ### Add parser argument for dicom directory 
-    # parser.add_argument('dicom_dir',type=str,help='Directory containing .dcm for inference')
-    # print(vars(parser.parse_args()))
-    # dirs = vars(parser.parse_args())
-    # in_dir = dirs['in_dir']
-    # ### Convert dicoms to avis 
-    # dicom_dir = Path(dirs['dicom_dir'])
-    # data_dir = Path(os.getcwd())/'sample'
-    # get_dicoms(dicom_dir,data_dir)
-    # to_view_classify = {}
-    # for dcm_path in Path(data_dir/'all_dicoms').iterdir():
-    #     curr = dicom_dir/dcm_path
-    #     input = make_view_input(curr)
-    #     if input is not None:
-    #         to_view_classify[curr] = input
-    # print('View classifying echoes')
-    # view_input = torch.stack(list(to_view_classify.values()))
-    # view_input = view_input[:,:,0,:,:] # Get first frames
-    # filenames = list(to_view_classify.keys())
-    # view_classifier = load_view_classifier()
-    # ### Dataframe with columns filename,view
-    # print('Finished view classification')
-    # predicted_view = get_views(view_input,view_classifier,filenames)
-    # echoes = predicted_view[predicted_view.view.isin(['A4C','A2C','PLAX'])]
-    # echoes.to_csv('echoes.csv',index=None)
-    # ### Extract PLAX files & save as avi
-    # print('Extracting PLAX videos for analysis')
-    # plax = echoes[echoes.view=='PLAX']
-    # for idx,row in plax.iterrows():
-    #     curr = row.filename
-    #     dicom_to_avi(curr,in_dir)
-    # ### Pop dicom directory off 
-    # del dirs['dicom_dir']
+    
     ### Wall thickness inference
     for k, (v, h) in args.items():
         h += f' default={v}'
@@ -475,7 +385,6 @@ if __name__ == '__main__':
             parser.add_argument('--' + k.replace('_', '-'), type=type(v), default=v, help=h)
     print(parser.parse_args())
     args.update({k.replace('-', '_'):[v,''] for k,v in vars(parser.parse_args()).items()})
-    # args.update({k.replace('-','_'):[v,''] for k,v in dirs.items()})
     get_args = lambda *l: {k: args[k][0] for k in l}
 
     # Run inference
